@@ -8,7 +8,7 @@ const jwt = require('jsonwebtoken');
 
 app.set("view engine","ejs");
 app.use(express.json());
-app.use(express.urlencoded({extended: true}));
+app.use(express.urlencoded({extended: true})); 
 app.use(cookieParser());
 
 app.get('/', (req,res) =>{
@@ -17,9 +17,10 @@ app.get('/', (req,res) =>{
 app.get('/login', async(req, res)=>{
     res.render("login");
 });
-app.get('/profile', isLoggedIn, (req,res) => {
-    console.log(req.user);
-    res.render("login");
+app.get('/profile', isLoggedIn, async (req,res) => {
+    let user = await userModel.findOne({email: req.user.email});
+    console.log(user);
+    res.render("profile", {user});
 })
 app.post('/register', async(req, res)=>{
     let {email, password, username, name, age} = req.body;
@@ -53,7 +54,7 @@ app.post('/login', async(req, res)=>{
         if(result) {
             let token = jwt.sign({email:email, userid: user._id}, "shhhh");
             res.cookie("token", token);
-            res.status(200).send("you can login");
+            res.status(200).redirect("/profile");
         }
         else res.redirect("/login");
     })
@@ -64,7 +65,7 @@ app.get('/logout', (req,res) =>{
 });
 
 function isLoggedIn(req, res, next) {
-   if (req.cookies.token === "") res.send("you must be logged in");
+   if (req.cookies.token === "") res.redirect("/login");
    else{
     let data = jwt.verify(req.cookies.token, "shhhh");
     req.user = data;
